@@ -4,6 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>🍽️ Mess Calculator</title>
+<!-- Google Identity Services — loaded eagerly so it's ready when user taps -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -209,12 +211,12 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
       <div class="auth-card" id="card-login">
 
         <!-- Google Sign-In -->
-        <button class="btn-google" id="google-btn" onclick="signInWithGoogle()">
+        <div id="google-btn-wrap"><button class="btn-google" id="google-btn" onclick="signInWithGoogle()">
           <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
           Continue with Google
-        </button>
+        </button></div>
 
-        <div class="divider-row">or sign in with email / mobile</div>
+        <div class="divider-row" id="or-divider">or sign in with email / mobile</div>
 
         <!-- Name -->
         <div class="fg">
@@ -266,6 +268,10 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
         <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;font-weight:500;line-height:1.6">
           If admin has added your email or mobile, tap <strong>Sign In</strong> or <strong>Continue with Google</strong> — you will join automatically without a group code
         </div>
+        <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px">Already a member? Forgot group code?</div>
+          <button class="btn btn-ghost btn-full" style="font-size:12px" onclick="showCard('card-recover')">🔍 Find My Group</button>
+        </div>
       </div>
 
       <!-- Create Group Card -->
@@ -294,6 +300,48 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
             style="text-align:center;font-size:22px;letter-spacing:7px;font-weight:800;text-transform:uppercase"/>
         </div>
         <button class="btn btn-primary btn-full" id="join-btn" onclick="joinGroup()">🚀 Join</button>
+      </div>
+      <!-- Recover / Find My Group Card -->
+      <div class="auth-card hide" id="card-recover">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+          <button class="btn btn-ghost btn-sm" onclick="backToLogin()">← Back</button>
+          <span style="font-size:15px;font-weight:800">🔍 Find My Group</span>
+        </div>
+        <div class="note-box" style="margin-bottom:16px">
+          Enter the <strong>same name + email or mobile</strong> you used when creating or joining the group. We will find your group automatically from the cloud.
+        </div>
+        <div class="fg">
+          <span class="lbl">Your Name</span>
+          <input class="inp" id="rec-name" placeholder="Your name"/>
+        </div>
+        <div class="auth-tabs" id="rec-tabs">
+          <button class="auth-tab active" onclick="switchRecoverTab('email')">📧 Email</button>
+          <button class="auth-tab" onclick="switchRecoverTab('phone')">📱 Mobile</button>
+        </div>
+        <div class="fg" id="rec-email-grp">
+          <span class="lbl">Email Address</span>
+          <input class="inp" id="rec-email" type="email" placeholder="your@email.com"/>
+        </div>
+        <div class="fg hide" id="rec-phone-grp">
+          <span class="lbl">Mobile Number</span>
+          <div style="display:flex">
+            <select id="rec-dial" style="background:var(--bg);border:1.5px solid var(--border);border-right:none;border-radius:var(--rs) 0 0 var(--rs);padding:10px 8px;font-family:inherit;font-size:13px;font-weight:700;outline:none;cursor:pointer;flex-shrink:0;min-width:108px;color:var(--text)">
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+974">🇶🇦 +974</option>
+              <option value="+965">🇰🇼 +965</option>
+              <option value="+968">🇴🇲 +968</option>
+            </select>
+            <input class="inp" id="rec-phone" type="tel" placeholder="50 123 4567" style="border-radius:0 var(--rs) var(--rs) 0;flex:1"/>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" id="rec-btn" onclick="recoverGroup()">🔍 Find &amp; Recover</button>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;font-weight:500">
+          Works for admin and all members who have registered their email/mobile
+        </div>
       </div>
     </div>
   </div>
@@ -633,28 +681,55 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
   </div>
 </div>
 
-<!-- Google / Firebase setup overlay -->
+<!-- Google Client ID setup overlay -->
 <div class="setup-overlay hide" id="setup-overlay">
   <div class="setup-box">
-    <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px">🔧 One-Time Setup</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:18px;font-weight:500;line-height:1.6">
-      To enable <strong>Google Sign-In</strong>, paste your Firebase Web API Key below. You only do this once.
+    <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px">🔧 Enable Google Sign-In</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-weight:500;line-height:1.6">
+      To use Google Sign-In you need a Google OAuth Client ID. This is a one-time setup.
     </p>
-    <div class="note-box" style="margin-bottom:16px;font-size:12px">
-      <strong>How to get it:</strong><br/>
-      1. Go to <strong>console.firebase.google.com</strong><br/>
-      2. Project Settings (⚙️) → General tab<br/>
-      3. Under "Your apps" → Web app → copy <strong>apiKey</strong><br/>
-      4. Also enable: Authentication → Sign-in method → <strong>Google → Enable</strong>
+    <div class="note-box" style="margin-bottom:16px;font-size:12px;line-height:1.8">
+      <strong>How to get your Client ID:</strong><br/>
+      1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);font-weight:700">console.cloud.google.com/apis/credentials</a><br/>
+      2. Click <strong>+ Create Credentials → OAuth Client ID</strong><br/>
+      3. Application type: <strong>Web application</strong><br/>
+      4. Under <strong>Authorised JavaScript origins</strong> add your site URL (e.g. <code style="background:var(--bg);padding:1px 5px;border-radius:4px">https://yourname.github.io</code>)<br/>
+      5. Click <strong>Create</strong> → copy the <strong>Client ID</strong> (ends with <code style="background:var(--bg);padding:1px 5px;border-radius:4px">.apps.googleusercontent.com</code>)
     </div>
     <div class="fg">
-      <span class="lbl">Firebase Web API Key</span>
-      <input class="inp" id="setup-apikey" placeholder="AIzaSy…" style="font-family:monospace;font-size:13px"/>
+      <span class="lbl">Google OAuth Client ID</span>
+      <input class="inp" id="setup-clientid" placeholder="xxxx.apps.googleusercontent.com" style="font-family:monospace;font-size:12px"/>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" style="flex:1" onclick="saveApiKey()">✅ Save &amp; Enable Google</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveClientId()">✅ Save &amp; Enable Google</button>
       <button class="btn btn-ghost" onclick="dismissSetup()">Skip</button>
     </div>
+  </div>
+</div>
+
+<!-- Group Created — Save Your Code Screen -->
+<div class="setup-overlay hide" id="group-created-overlay" style="z-index:300">
+  <div class="setup-box" style="text-align:center;max-width:380px">
+    <div style="font-size:42px;margin-bottom:10px">🎉</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px">Group Created!</div>
+    <div style="font-size:13px;color:var(--text2);font-weight:500;margin-bottom:20px" id="gc-name"></div>
+
+    <div style="background:var(--accent-lt);border:2px dashed rgba(200,98,42,.35);border-radius:14px;padding:20px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:8px">Your Group Code</div>
+      <div style="font-size:36px;font-weight:800;letter-spacing:10px;color:var(--accent)" id="gc-code"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;font-weight:500">Save this code — share it with your roommates</div>
+    </div>
+
+    <div class="note-box" style="text-align:left;margin-bottom:16px">
+      <strong>⚠️ Important:</strong> Save this code somewhere safe.<br/>
+      <strong>You can always recover your account</strong> by entering your name + email/mobile on the login screen and tapping <strong>Sign In</strong> — no code needed.
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="copyCreatedCode()">📋 Copy Code</button>
+      <button class="btn btn-wa" style="flex:1" onclick="shareCreatedCodeWA()">📲 WhatsApp</button>
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="enterAppFromCode()">✅ Got it — Enter App</button>
   </div>
 </div>
 
@@ -980,117 +1055,207 @@ async function autoSignIn(){
   btn.disabled=false; btn.textContent='🚀 Sign In';
 }
 
-// ─── Google Sign-In ────────────────────────────────────────────────
-const FIREBASE_API_KEY_SK = 'mess-fb-apikey';
-let _firebaseApiKey = localStorage.getItem(FIREBASE_API_KEY_SK)||'';
+// ─── Google Sign-In via Google Identity Services ──────────────────
+const GOOGLE_CLIENT_ID_SK = 'mess-google-client-id';
+let _googleClientId = localStorage.getItem(GOOGLE_CLIENT_ID_SK)||'366323147361-f91hnjtdcsig49kb95tmcdcu219odsle.apps.googleusercontent.com';
+let _gsiLoaded = false;
 
-function saveApiKey(){
-  const k = document.getElementById('setup-apikey').value.trim();
-  if(!k||k.length<10){ toast('Enter a valid API key',true); return; }
-  _firebaseApiKey = k;
-  localStorage.setItem(FIREBASE_API_KEY_SK, k);
+function saveClientId(){
+  const k = document.getElementById('setup-clientid').value.trim();
+  if(!k||!k.includes('.apps.googleusercontent.com')){ toast('Enter a valid Client ID (ends with .apps.googleusercontent.com)',true); return; }
+  _googleClientId = k;
+  localStorage.setItem(GOOGLE_CLIENT_ID_SK, k);
   document.getElementById('setup-overlay').classList.add('hide');
+  _initGSI();
   toast('Google Sign-In enabled ✓');
 }
 function dismissSetup(){
   document.getElementById('setup-overlay').classList.add('hide');
 }
 
+function _initGSI(){
+  if(!_googleClientId||!window.google||_gsiLoaded) return;
+  _gsiLoaded=true;
+  google.accounts.id.initialize({
+    client_id: _googleClientId,
+    callback: _onGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+}
+
+function _onGoogleCredential(response){
+  // Decode JWT payload (no crypto needed — we just read the claims)
+  try{
+    const parts = response.credential.split('.');
+    const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const email = payload.email||'';
+    const name  = payload.name||payload.given_name||email.split('@')[0]||'User';
+    const btn   = document.getElementById('google-btn');
+    if(btn){ btn.disabled=true; btn.textContent='Signing in…'; }
+    _doJoinWithContact(name, email, '').then(ok=>{
+      if(btn){ btn.disabled=false; _resetGoogleBtn(); }
+      if(!ok){
+        document.getElementById('a-name').value  = name;
+        document.getElementById('a-email').value = email;
+        switchContactTab('email');
+        toast('Hi '+name+'! Ask your admin to add your email ('+email+') to the group first, then try again.',true);
+      }
+    });
+  }catch(e){
+    console.error('Google credential decode error:',e);
+    toast('Google sign-in failed. Try the email option instead.',true);
+  }
+}
+
+function _resetGoogleBtn(){
+  const btn=document.getElementById('google-btn'); if(!btn) return;
+  btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continue with Google';
+}
+
 async function signInWithGoogle(){
-  if(!_firebaseApiKey){
-    // Show setup overlay
+  if(!_googleClientId){
     document.getElementById('setup-overlay').classList.remove('hide');
     return;
   }
   const btn = document.getElementById('google-btn');
   btn.disabled=true;
-  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#4285F4" stroke-width="3" stroke-dasharray="31" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></circle></svg> Signing in…';
+  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#4285F4" stroke-width="3" stroke-dasharray="31"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></circle></svg>&nbsp;Opening…';
+
+  // Wait up to 4s for GSI
+  let waited=0;
+  while((!window.google||!window.google.accounts)&&waited<4000){
+    await new Promise(r=>setTimeout(r,200)); waited+=200;
+  }
+
+  btn.disabled=false; _resetGoogleBtn();
+
+  if(!window.google||!window.google.accounts||!window.google.accounts.oauth2){
+    // GSI blocked — smoothly scroll down to email sign-in
+    _highlightEmailSignIn();
+    return;
+  }
+
+  _initGSI();
 
   try{
-    // Step 1: Get Google OAuth URL from Firebase Auth REST
-    const authRes = await fetch(
-      'https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key='+_firebaseApiKey,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          identifier: 'google.com',
-          continueUri: window.location.href,
-          providerId: 'google.com'
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: _googleClientId,
+      scope: 'email profile openid',
+      callback: (resp)=>{
+        if(resp.error||!resp.access_token){ return; }
+        const gb=document.getElementById('google-btn');
+        if(gb){gb.disabled=true;gb.textContent='Signing in…';}
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
+          headers:{Authorization:'Bearer '+resp.access_token}
         })
+        .then(r=>r.json())
+        .then(info=>{
+          const email=info.email||'';
+          const name=info.name||info.given_name||email.split('@')[0]||'User';
+          return _doJoinWithContact(name,email,'').then(ok=>{
+            if(gb){gb.disabled=false;_resetGoogleBtn();}
+            if(!ok){
+              document.getElementById('a-name').value=name;
+              document.getElementById('a-email').value=email;
+              switchContactTab('email');
+              toast('Hi '+name+'! Ask your admin to add '+email+' first, then tap Sign In.',true);
+            }
+          });
+        })
+        .catch(e=>{ if(gb){gb.disabled=false;_resetGoogleBtn();} });
       }
-    );
-    const authData = await authRes.json();
-    if(!authData.authUri){
-      throw new Error(authData.error?.message||'Could not get Google auth URL');
-    }
-    // Save state so we can resume after redirect
-    sessionStorage.setItem('google-signin-pending','1');
-    // Redirect to Google
-    window.location.href = authData.authUri;
+    });
+    client.requestAccessToken({prompt:'select_account'});
   }catch(e){
-    console.error('Google sign-in error:',e);
-    toast('Google Sign-In failed: '+e.message, true);
-    btn.disabled=false;
-    btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continue with Google';
+    console.error('GSI error:',e);
+    _highlightEmailSignIn();
   }
 }
 
-// Handle Google OAuth redirect callback
-async function handleGoogleCallback(){
-  if(!sessionStorage.getItem('google-signin-pending')) return;
-  sessionStorage.removeItem('google-signin-pending');
-  const url = window.location.href;
-  if(!url.includes('code=')&&!url.includes('id_token=')) return;
-
-  const btn = document.getElementById('google-btn');
-  if(btn){ btn.disabled=true; btn.textContent='Completing sign-in…'; }
-
-  try{
-    // Exchange the auth code for tokens via Firebase Auth REST
-    const signInRes = await fetch(
-      'https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key='+_firebaseApiKey,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          requestUri: url,
-          returnSecureToken: true
-        })
-      }
-    );
-    const signInData = await signInRes.json();
-    if(signInData.error){
-      throw new Error(signInData.error.message);
-    }
-
-    const googleEmail = signInData.email||'';
-    const googleName  = signInData.displayName||signInData.email?.split('@')[0]||'User';
-
-    // Clean URL
-    window.history.replaceState({},'',window.location.pathname);
-
-    // Try to find their group
-    const ok = await _doJoinWithContact(googleName, googleEmail, '');
-    if(!ok){
-      // Not in any group yet — pre-fill email and show login options
-      document.getElementById('a-name').value = googleName;
-      document.getElementById('a-email').value = googleEmail;
-      switchContactTab('email');
-      toast('Hi '+googleName+'! Your email was not found in any group. Ask your admin to add '+googleEmail+' first, then sign in again.',true);
-    }
-  }catch(e){
-    console.error('Google callback error:',e);
-    toast('Sign-in failed: '+e.message,true);
+function _highlightEmailSignIn(){
+  // Smoothly highlight the email/mobile sign-in area
+  const emailGrp = document.getElementById('grp-email');
+  const nameInp  = document.getElementById('a-name');
+  // Flash the email section
+  const section  = document.querySelector('#card-login .divider-row');
+  if(section){
+    section.style.color='var(--accent)';
+    section.textContent='👇 use email or mobile to sign in';
+    setTimeout(()=>{ section.style.color=''; section.textContent='or sign in with email / mobile'; },4000);
   }
-  if(btn){ btn.disabled=false; btn.textContent='Continue with Google'; }
+  if(nameInp) nameInp.focus();
 }
+
+// Script already in <head> — just init when ready
+function _loadGSI(){
+  if(!_googleClientId) return;
+  if(window.google&&window.google.accounts){ _initGSI(); return; }
+  let tries=0;
+  const poll=setInterval(()=>{
+    tries++;
+    if(window.google&&window.google.accounts){
+      clearInterval(poll);
+      _initGSI();
+    }
+    if(tries>30){ // 6 seconds
+      clearInterval(poll);
+      // Hide Google button and show subtle note if blocked
+      const btn=document.getElementById('google-btn');
+      const wrap=document.getElementById('google-btn-wrap');
+      if(btn&&!window.google){
+        btn.style.display='none';
+        if(wrap) wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--muted);padding:4px 0">Google Sign-In unavailable on this device — use email or mobile below</div>';
+      }
+    }
+  },200);
+}
+
+// No-op: kept for compatibility (redirect callback no longer used)
+async function handleGoogleCallback(){ }
 
 function goCreate(){ const u=getUser(); if(!u)return; window._pu=u; showCard('card-create'); }
 function goJoin(){ const u=getUser(); if(!u)return; window._pu=u; showCard('card-join'); }
 function backToLogin(){ showCard('card-login'); }
 function showCard(id){
-  ['card-login','card-create','card-join'].forEach(c=>document.getElementById(c).classList.toggle('hide', c!==id));
+  ['card-login','card-create','card-join','card-recover'].forEach(c=>document.getElementById(c).classList.toggle('hide', c!==id));
+}
+
+let _recoverMode='email';
+function switchRecoverTab(mode){
+  _recoverMode=mode;
+  document.querySelectorAll('#rec-tabs .auth-tab').forEach((b,i)=>b.classList.toggle('active',i===(mode==='email'?0:1)));
+  document.getElementById('rec-email-grp').classList.toggle('hide',mode!=='email');
+  document.getElementById('rec-phone-grp').classList.toggle('hide',mode!=='phone');
+}
+
+async function recoverGroup(){
+  const name  = document.getElementById('rec-name').value.trim();
+  const email = _recoverMode==='email' ? document.getElementById('rec-email').value.trim() : '';
+  const dial  = document.getElementById('rec-dial').value;
+  const phRaw = _recoverMode==='phone' ? document.getElementById('rec-phone').value.trim().replace(/^0+/,'') : '';
+  const phone = phRaw ? dial+' '+phRaw : '';
+  if(!name){ toast('Enter your name',true); return; }
+  if(!email&&!phone){ toast('Enter your email or mobile',true); return; }
+  const btn=document.getElementById('rec-btn');
+  btn.disabled=true; btn.textContent='Searching…';
+  const ok = await _doJoinWithContact(name, email, phone);
+  btn.disabled=false; btn.textContent='🔍 Find & Recover';
+  if(!ok){
+    toast('No group found for this email/mobile. Make sure you used the same contact when registering.',true);
+  }
+}
+
+function copyCreatedCode(){
+  const code=document.getElementById('gc-code').textContent;
+  navigator.clipboard.writeText(code).then(()=>toast('Group code copied!'))
+    .catch(()=>toast('Your code: '+code));
+}
+function shareCreatedCodeWA(){
+  const code=document.getElementById('gc-code').textContent;
+  const name=document.getElementById('gc-name').textContent;
+  const msg='🍽️ Join *'+name+'* on Mess Calculator!\n\nGroup Code: *'+code+'*\n\nOpen the app → tap Sign In with your email/mobile, or Join with Code → enter: '+code;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
 async function createGroup(){
@@ -1101,18 +1266,32 @@ async function createGroup(){
   const code=genCode();
   const g={code,name:gname,adminId:u.id,currency:'AED',
     members:[{...u,joinedAt:new Date().toISOString()}],bills:[],grocery:[]};
-  // Save to Firebase first
+  // Save to Firebase
   const ok = await fbWrite(code, g);
   btn.disabled=false; btn.textContent='✨ Create & Enter';
   if(!ok){
     toast('Could not reach server — check your internet connection',true);
     return;
   }
+  // ── KEY FIX: Write admin's own invite so they can recover via Sign In ──
+  await _writeInvite(u, code);
   if(!S) S={groups:{}};
   S.groups[code]=g;
   me={...u,groupCode:code};
   S.me=me;
   save();
+  // Show group code screen before entering the app
+  _showGroupCodeCreated(code, gname);
+}
+
+function _showGroupCodeCreated(code, gname){
+  // Reveal the "group created" overlay so admin saves the code
+  document.getElementById('gc-code').textContent=code;
+  document.getElementById('gc-name').textContent=gname;
+  document.getElementById('group-created-overlay').classList.remove('hide');
+}
+function enterAppFromCode(){
+  document.getElementById('group-created-overlay').classList.add('hide');
   launchApp();
 }
 
@@ -1145,6 +1324,8 @@ async function joinGroup(){
   if(!S) S={groups:{}};
   S.groups[code]=g;
   S.me=me;
+  // Write own invite for future recovery
+  await _writeInvite(me, code);
   save();
   launchApp();
 }
@@ -1865,9 +2046,9 @@ function renderAll(){ renderMembers(); renderBills(); renderGrocery(); if(docume
 // ═══════════════════ INIT
 (async function init(){
   S = load();
-  _firebaseApiKey = localStorage.getItem(FIREBASE_API_KEY_SK)||'';
-  // Handle Google OAuth redirect
-  await handleGoogleCallback();
+  _googleClientId = localStorage.getItem(GOOGLE_CLIENT_ID_SK)||'';
+  // Load Google Identity Services if client ID is saved
+  _loadGSI();
   if(S && S.me && S.me.groupCode){
     me = S.me;
     const code = me.groupCode;
