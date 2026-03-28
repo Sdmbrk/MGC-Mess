@@ -121,6 +121,9 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .chip:hover{border-color:var(--accent);color:var(--accent)}
 .chip.active{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
 .g-row{display:flex;align-items:center;gap:10px;transition:opacity .2s}
+.live-dot.online{background:#25d366!important;box-shadow:0 0 0 3px rgba(37,211,102,.2)}
+.live-dot.syncing{background:#f39c12!important}
+.live-dot.offline{background:var(--red)!important}
 .g-row.done{opacity:.5}
 input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
 .settle-from{font-weight:800;color:var(--red)}.settle-to{font-weight:800;color:var(--green)}.settle-arr{color:var(--dim);margin:0 8px}
@@ -228,7 +231,7 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
           <span class="lbl">Group Name</span>
           <input class="inp" id="a-grpname" placeholder="Our Mess, Room 201…"/>
         </div>
-        <button class="btn btn-primary btn-full" onclick="createGroup()">✨ Create &amp; Enter</button>
+        <button class="btn btn-primary btn-full" id="create-btn" onclick="createGroup()">✨ Create &amp; Enter</button>
       </div>
 
       <!-- Join Group Card -->
@@ -237,13 +240,13 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
           <button class="btn btn-ghost btn-sm" onclick="backToLogin()">← Back</button>
           <span style="font-size:15px;font-weight:800">Join a Group</span>
         </div>
-        <div class="note-box" style="margin-bottom:14px">Enter the group code shared by your admin. The admin must first export and share the group data with you via the Sync feature.</div>
+        <div class="note-box" style="margin-bottom:14px">Enter the <strong>6-character group code</strong> shared by your admin. Works from any device — data syncs automatically via the cloud.</div>
         <div class="fg">
           <span class="lbl">Group Code</span>
           <input class="inp" id="a-code" placeholder="e.g. XK92A1" maxlength="8"
             style="text-align:center;font-size:22px;letter-spacing:7px;font-weight:800;text-transform:uppercase"/>
         </div>
-        <button class="btn btn-primary btn-full" onclick="joinGroup()">🚀 Join</button>
+        <button class="btn btn-primary btn-full" id="join-btn" onclick="joinGroup()">🚀 Join</button>
       </div>
     </div>
   </div>
@@ -260,6 +263,10 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
       </div>
     </div>
     <div class="h-right">
+      <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted)">
+        <span class="live-dot syncing" id="live-dot" style="width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0"></span>
+        <span id="live-lbl">Connecting…</span>
+      </div>
       <button class="cur-btn" onclick="openModal('cur-modal')">
         <span id="h-flag">🇦🇪</span>
         <span class="cur-sym" id="h-sym">د.إ</span>
@@ -642,13 +649,109 @@ let selectedSplit = [];
 let editBillId = null;
 let contactMode = 'email';
 
-// ═══════════════════ STORAGE
-function save(){ try{ localStorage.setItem(SK, JSON.stringify(S)); }catch(e){} }
+// ═══════════════════ STORAGE (local)
+function save(){
+  try{
+    localStorage.setItem(SK, JSON.stringify(S));
+  }catch(e){}
+  // Also push to Firebase in background after any save
+  if(me && me.groupCode){
+    const g = S && S.groups ? S.groups[me.groupCode] : null;
+    if(g) fbWrite(me.groupCode, g).catch(()=>{});
+  }
+}
 function load(){ try{ const d=localStorage.getItem(SK); return d?JSON.parse(d):null; }catch(e){ return null; } }
 
-// S structure: { groups: { CODE: {code,name,adminId,currency,members:[],bills:[],grocery:[]} }, me: {id,name,...,groupCode} }
-
+// S structure: { groups: { CODE: {...} }, me: {id,...,groupCode} }
 function grp(){ return S && S.groups && me ? S.groups[me.groupCode] : null; }
+
+// ═══════════════════ FIREBASE REST
+const FB = 'https://project-2-f137b-default-rtdb.firebaseio.com';
+
+function fbUrl(code){ return FB + '/groups/' + code + '.json'; }
+
+async function fbRead(code){
+  try{
+    const r = await fetch(fbUrl(code));
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d;
+  }catch(e){ return null; }
+}
+
+async function fbWrite(code, data){
+  try{
+    const r = await fetch(fbUrl(code), {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    return r.ok;
+  }catch(e){ return false; }
+}
+
+// Merge Firebase arrays (Firebase converts [] to {0:x,1:y})
+function fixArr(g){
+  if(!g) return g;
+  ['bills','members','grocery'].forEach(k=>{
+    if(g[k] && !Array.isArray(g[k])) g[k] = Object.values(g[k]);
+    if(!g[k]) g[k] = [];
+  });
+  return g;
+}
+
+// Push local group to Firebase (fire and forget)
+function fbSync(){
+  const g = grp(); if(!g||!me) return;
+  fbWrite(me.groupCode, g).then(ok=>{
+    setLiveStatus(ok ? 'online' : 'offline');
+  }).catch(()=> setLiveStatus('offline'));
+}
+
+function setLiveStatus(status){
+  const dot = document.getElementById('live-dot');
+  const lbl = document.getElementById('live-lbl');
+  if(!dot) return;
+  dot.className = 'live-dot ' + status;
+  lbl.textContent = status==='online' ? '🟢 Live' : status==='syncing' ? '🟡 Syncing' : '🔴 Offline';
+}
+
+// Poll Firebase every 15s and merge new data
+let _pollTimer = null;
+function startPolling(code){
+  stopPolling();
+  _doPoll(code);
+}
+function stopPolling(){
+  if(_pollTimer){ clearTimeout(_pollTimer); _pollTimer=null; }
+}
+async function _doPoll(code){
+  const fresh = await fbRead(code);
+  if(fresh && fresh.name){
+    fixArr(fresh);
+    const g = grp();
+    if(g){
+      // Merge new bills from Firebase not in local
+      const localIds = new Set(g.bills.map(b=>b.id));
+      fresh.bills.forEach(b=>{ if(!localIds.has(b.id)) g.bills.unshift(b); });
+      // Merge new grocery
+      const localGIds = new Set(g.grocery.map(i=>i.id));
+      fresh.grocery.forEach(i=>{ if(!localGIds.has(i.id)) g.grocery.push(i); });
+      // Merge new members
+      const localMIds = new Set(g.members.map(m=>m.id));
+      fresh.members.forEach(m=>{ if(!localMIds.has(m.id)) g.members.push(m); });
+      // Sync currency/adminId from Firebase (admin controls these)
+      if(fresh.currency) g.currency = fresh.currency;
+      if(fresh.adminId)  g.adminId  = fresh.adminId;
+      save();
+      renderAll();
+    }
+    setLiveStatus('online');
+  } else {
+    setLiveStatus('offline');
+  }
+  _pollTimer = setTimeout(()=> _doPoll(code), 15000);
+}
 
 // ═══════════════════ HELPERS
 function uid(){ return Math.random().toString(36).slice(2,9); }
@@ -698,11 +801,21 @@ function showCard(id){
   ['card-login','card-create','card-join'].forEach(c=>document.getElementById(c).classList.toggle('hide', c!==id));
 }
 
-function createGroup(){
+async function createGroup(){
   const u=window._pu; if(!u)return;
+  const btn=document.getElementById('create-btn');
+  btn.disabled=true; btn.textContent='Creating…';
   const gname=document.getElementById('a-grpname').value.trim()||'Our Mess';
   const code=genCode();
-  const g={code,name:gname,adminId:u.id,currency:'AED',members:[{...u,joinedAt:new Date().toISOString()}],bills:[],grocery:[]};
+  const g={code,name:gname,adminId:u.id,currency:'AED',
+    members:[{...u,joinedAt:new Date().toISOString()}],bills:[],grocery:[]};
+  // Save to Firebase first
+  const ok = await fbWrite(code, g);
+  btn.disabled=false; btn.textContent='✨ Create & Enter';
+  if(!ok){
+    toast('Could not reach server — check your internet connection',true);
+    return;
+  }
   if(!S) S={groups:{}};
   S.groups[code]=g;
   me={...u,groupCode:code};
@@ -711,24 +824,43 @@ function createGroup(){
   launchApp();
 }
 
-function joinGroup(){
+async function joinGroup(){
   const u=window._pu; if(!u)return;
+  const btn=document.getElementById('join-btn');
   const code=document.getElementById('a-code').value.trim().toUpperCase();
   if(!code||code.length<4){ toast('Enter a valid group code',true); return; }
-  if(!S||!S.groups||!S.groups[code]){ toast('Group not found. Ask admin to share data via Sync first.',true); return; }
-  const g=S.groups[code];
+  btn.disabled=true; btn.textContent='Joining…';
+  // Fetch group from Firebase
+  const g = await fbRead(code);
+  btn.disabled=false; btn.textContent='🚀 Join';
+  if(!g||!g.name){
+    toast('Group "'+code+'" not found. Check the code and try again.',true);
+    return;
+  }
+  fixArr(g);
+  // Check if same contact exists (re-login)
   let existing=null;
-  if(u.email) existing=g.members.find(m=>m.email===u.email);
-  if(u.phone) existing=g.members.find(m=>m.phone===u.phone);
-  if(existing){ me={...existing,groupCode:code}; }
-  else { g.members.push({...u,joinedAt:new Date().toISOString()}); me={...u,groupCode:code}; }
+  if(u.email&&u.email!=='') existing=g.members.find(m=>m.email&&m.email===u.email);
+  if(u.phone&&u.phone!=='') existing=g.members.find(m=>m.phone&&m.phone===u.phone);
+  if(existing){
+    me={...existing, groupCode:code};
+  } else {
+    g.members.push({...u, joinedAt:new Date().toISOString()});
+    me={...u, groupCode:code};
+    // Save updated member list to Firebase
+    await fbWrite(code, g);
+  }
+  if(!S) S={groups:{}};
+  S.groups[code]=g;
   S.me=me;
   save();
   launchApp();
 }
 
 function logout(){
-  me=null; if(S) S.me=null; save();
+  stopPolling();
+  me=null; if(S) S.me=null;
+  try{ localStorage.setItem(SK, JSON.stringify(S)); }catch(e){}
   toggleMenu(true);
   setScreen('auth-screen');
   backToLogin();
@@ -751,6 +883,8 @@ function launchApp(){
   syncPaidBy(); renderSplitChips(); initRepSelectors(); updateCurUI(); renderAll();
   renderPresetTabs(); renderPresetItems();
   setScreen('app-screen');
+  setLiveStatus('syncing');
+  startPolling(me.groupCode);
 }
 
 // ═══════════════════ CURRENCY
@@ -1319,12 +1453,26 @@ function shareCodeWA(){
 function renderAll(){ renderMembers(); renderBills(); renderGrocery(); if(document.getElementById('tab-report').classList.contains('active')) renderReport(); }
 
 // ═══════════════════ INIT
-(function init(){
+(async function init(){
   S = load();
-  // Restore session
-  if(S && S.me && S.me.groupCode && S.groups && S.groups[S.me.groupCode]){
+  if(S && S.me && S.me.groupCode){
     me = S.me;
-    launchApp();
+    const code = me.groupCode;
+    // Try to get fresh data from Firebase
+    setLiveStatus('syncing');
+    const fresh = await fbRead(code);
+    if(fresh && fresh.name){
+      fixArr(fresh);
+      if(!S.groups) S.groups = {};
+      S.groups[code] = fresh;
+      save();
+    }
+    // Launch from whatever we have (local or fresh)
+    if(S.groups && S.groups[code]){
+      launchApp();
+    } else {
+      setScreen('auth-screen');
+    }
   } else {
     setScreen('auth-screen');
   }
