@@ -1,2 +1,2 @@
 # MGC-Mess
-App to manage Mess Billas and Option to add Grocery List
+App to manage Mess Bills and Option to add Grocery List
