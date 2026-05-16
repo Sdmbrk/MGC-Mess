@@ -4,8 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>🍽️ Mess Calculator</title>
-<!-- Google Identity Services — loaded eagerly so it's ready when user taps -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -123,10 +121,6 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .chip:hover{border-color:var(--accent);color:var(--accent)}
 .chip.active{border-color:var(--accent);background:var(--accent-lt);color:var(--accent)}
 .g-row{display:flex;align-items:center;gap:10px;transition:opacity .2s}
-.btn-google{background:#fff;color:#3c4043;border:1.5px solid #dadce0;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:700;font-family:inherit;padding:11px 16px;border-radius:var(--rs);cursor:pointer;width:100%;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.btn-google:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,.15);transform:translateY(-1px)}
-.btn-google:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.btn-google svg{flex-shrink:0}
 .divider-row{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--dim);font-size:12px;font-weight:600}
 /* Contribution chart */
 .contrib-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
@@ -211,10 +205,6 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
       <div class="auth-card" id="card-login">
 
         <!-- Google Sign-In -->
-        <div id="google-btn-wrap"><button class="btn-google" id="google-btn" onclick="signInWithGoogle()">
-          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-          Continue with Google
-        </button></div>
 
         <div class="divider-row" id="or-divider">or sign in with email / mobile</div>
 
@@ -266,7 +256,7 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
         </div>
 
         <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;font-weight:500;line-height:1.6">
-          If admin has added your email or mobile, tap <strong>Sign In</strong> or <strong>Continue with Google</strong> — you will join automatically without a group code
+          If admin has added your email or mobile, tap <strong>Sign In</strong> — you will join automatically without a group code
         </div>
         <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px;text-align:center">
           <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px">Already a member? Forgot group code?</div>
@@ -358,9 +348,10 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
       </div>
     </div>
     <div class="h-right">
-      <div style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted)">
+      <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);cursor:pointer" onclick="manualRefresh()" title="Tap to sync now">
         <span class="live-dot syncing" id="live-dot" style="width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0"></span>
         <span id="live-lbl">Connecting…</span>
+        <span id="refresh-btn" style="font-size:13px;opacity:.6">⟳</span>
       </div>
       <button class="cur-btn" onclick="openModal('cur-modal')">
         <span id="h-flag">🇦🇪</span>
@@ -693,7 +684,7 @@ input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--ac
       1. Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--accent);font-weight:700">console.cloud.google.com/apis/credentials</a><br/>
       2. Click <strong>+ Create Credentials → OAuth Client ID</strong><br/>
       3. Application type: <strong>Web application</strong><br/>
-      4. Under <strong>Authorised JavaScript origins</strong> add your site URL (e.g. <code style="background:var(--bg);padding:1px 5px;border-radius:4px">https://yourname.github.io</code>)<br/>
+      4. Under <strong>Authorised JavaScript origins</strong> add your site URL (e.g. <code style="background:var(--bg);padding:1px 5px;border-radius:4px">https://sdmbrk.github.io</code>)<br/>
       5. Click <strong>Create</strong> → copy the <strong>Client ID</strong> (ends with <code style="background:var(--bg);padding:1px 5px;border-radius:4px">.apps.googleusercontent.com</code>)
     </div>
     <div class="fg">
@@ -848,41 +839,153 @@ function save(){
   try{
     localStorage.setItem(SK, JSON.stringify(S));
   }catch(e){}
-  // Also push to Firebase in background after any save
-  if(me && me.groupCode){
-    const g = S && S.groups ? S.groups[me.groupCode] : null;
-    if(g) fbWrite(me.groupCode, g).catch(()=>{});
-  }
+}
+// Call this after any user action that should sync to Firebase
+function saveAndSync(){
+  save();
+  const g=grp(); if(!g||!me) return;
+  setLiveStatus('syncing');
+  fbWrite(me.groupCode, g).then(ok=>{
+    setLiveStatus(ok?'online':'offline');
+  }).catch(()=>setLiveStatus('offline'));
 }
 function load(){ try{ const d=localStorage.getItem(SK); return d?JSON.parse(d):null; }catch(e){ return null; } }
 
 // S structure: { groups: { CODE: {...} }, me: {id,...,groupCode} }
 function grp(){ return S && S.groups && me ? S.groups[me.groupCode] : null; }
 
-// ═══════════════════ FIREBASE REST
-const FB = 'https://project-2-f137b-default-rtdb.firebaseio.com';
+// ═══════════════════ JSONBIN SYNC
+// JSONBin.io — free cloud storage, no backend needed
+// Bins = one per group (keyed by group code)
+ // replaced per group at runtime
+const JB_BASE = 'https://api.jsonbin.io/v3';
+// Store: binId per group code in localStorage
+const BIN_MAP_SK = 'mess-bins'; // {groupCode: binId}
 
-function fbUrl(code){ return FB + '/groups/' + code + '.json'; }
+function getBinMap(){ try{ return JSON.parse(localStorage.getItem(BIN_MAP_SK)||'{}'); }catch(e){ return {}; } }
+function setBinMap(m){ try{ localStorage.setItem(BIN_MAP_SK, JSON.stringify(m)); }catch(e){} }
+function getBinId(code){ return getBinMap()[code]||null; }
+function setBinId(code, binId){ const m=getBinMap(); m[code]=binId; setBinMap(m); }
+
+// Master API key stored in app
+const JB_API_KEY = '$2a$10$vnGY9UDMF1BhBXw.XnBX.exRzxDS/eLZWcSfkKDnkP0qThBVmf3lG';
 
 async function fbRead(code){
+  const binId = getBinId(code);
+  if(!binId) return null;
   try{
-    const r = await fetch(fbUrl(code));
-    if(!r.ok) return null;
-    const d = await r.json();
-    return d;
-  }catch(e){ return null; }
+    const r = await fetch(JB_BASE+'/b/'+binId+'/latest', {
+      headers:{'X-Master-Key': JB_API_KEY, 'X-Bin-Meta': 'false'}
+    });
+    if(!r.ok){ console.warn('JSONBin read HTTP', r.status); return null; }
+    return await r.json();
+  }catch(e){ console.warn('JSONBin read error:', e.message); return null; }
 }
 
 async function fbWrite(code, data){
+  const binId = getBinId(code);
+  if(!binId){
+    // Create new bin for this group
+    return await _createBin(code, data);
+  }
   try{
-    const r = await fetch(fbUrl(code), {
+    const r = await fetch(JB_BASE+'/b/'+binId, {
       method:'PUT',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','X-Master-Key': JB_API_KEY},
       body: JSON.stringify(data)
     });
-    return r.ok;
-  }catch(e){ return false; }
+    if(r.ok){ setLiveStatus('online'); return true; }
+    console.warn('JSONBin write HTTP', r.status);
+    setLiveStatus('offline'); return false;
+  }catch(e){
+    console.warn('JSONBin write error:', e.message);
+    setLiveStatus('offline'); return false;
+  }
 }
+
+async function _createBin(code, data){
+  try{
+    const r = await fetch(JB_BASE+'/b', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Master-Key': JB_API_KEY,
+        'X-Bin-Name': 'mess-'+code,
+        'X-Bin-Private': 'false'
+      },
+      body: JSON.stringify(data)
+    });
+    if(!r.ok){ setLiveStatus('offline'); return false; }
+    const res = await r.json();
+    const binId = res.metadata?.id||res.id;
+    if(binId){
+      setBinId(code, binId);
+      // Also write binId to a lookup bin so others can find it by code
+      await _writeLookup(code, binId);
+      setLiveStatus('online');
+      return true;
+    }
+    return false;
+  }catch(e){ console.warn('JSONBin create error:', e.message); setLiveStatus('offline'); return false; }
+}
+
+// Lookup bin maps groupCode → binId so joiners can find the bin
+const LOOKUP_BIN_SK = 'mess-lookup-bin';
+function getLookupBinId(){ return localStorage.getItem(LOOKUP_BIN_SK)||null; }
+
+async function _writeLookup(code, binId){
+  const lookupId = getLookupBinId();
+  let map = {};
+  if(lookupId){
+    try{
+      const r = await fetch(JB_BASE+'/b/'+lookupId+'/latest',{headers:{'X-Master-Key':JB_API_KEY,'X-Bin-Meta':'false'}});
+      if(r.ok) map = await r.json();
+    }catch(e){}
+    map[code]=binId;
+    await fetch(JB_BASE+'/b/'+lookupId,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':JB_API_KEY},body:JSON.stringify(map)});
+  } else {
+    map[code]=binId;
+    try{
+      const r = await fetch(JB_BASE+'/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':JB_API_KEY,'X-Bin-Name':'mess-lookup','X-Bin-Private':'false'},body:JSON.stringify(map)});
+      if(r.ok){ const res=await r.json(); const lid=res.metadata?.id||res.id; if(lid) localStorage.setItem(LOOKUP_BIN_SK,lid); }
+    }catch(e){}
+  }
+}
+
+async function _lookupBinId(code){
+  // First check local
+  const local = getBinId(code);
+  if(local) return local;
+  // Try lookup bin
+  const lookupId = getLookupBinId();
+  if(lookupId){
+    try{
+      const r = await fetch(JB_BASE+'/b/'+lookupId+'/latest',{headers:{'X-Master-Key':JB_API_KEY,'X-Bin-Meta':'false'}});
+      if(r.ok){
+        const map = await r.json();
+        if(map[code]){ setBinId(code, map[code]); return map[code]; }
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
+// Override fbRead to lookup binId first
+const _fbReadOrig = fbRead;
+async function fbReadByCode(code){
+  if(!getBinId(code)){
+    const found = await _lookupBinId(code);
+    if(!found) return null;
+  }
+  return fbRead(code);
+}
+
+// Invites stored in a separate lookup approach — use group member list
+async function fbReadInvite(contactKey){
+  // Scan lookup bin for groups, then scan members
+  return null; // handled locally via group scan
+}
+async function fbWriteInvite(contactKey, groupCode){ /* no-op — done via group member list */ }
 
 // Merge Firebase arrays (Firebase converts [] to {0:x,1:y})
 function fixArr(g){
@@ -906,12 +1009,21 @@ function setLiveStatus(status){
   const dot = document.getElementById('live-dot');
   const lbl = document.getElementById('live-lbl');
   if(!dot) return;
-  dot.className = 'live-dot ' + status;
-  lbl.textContent = status==='online' ? '🟢 Live' : status==='syncing' ? '🟡 Syncing' : '🔴 Offline';
+  const map = {
+    online:  ['online',  '🟢 Live'],
+    syncing: ['syncing', '🟡 Syncing'],
+    offline: ['offline', '🔴 Offline'],
+    rules:   ['offline', '🔴 Rules Error'],
+  };
+  const [cls,text] = map[status]||['offline','🔴 Offline'];
+  dot.className='live-dot '+cls;
+  lbl.textContent=text;
 }
 
-// Poll Firebase every 15s and merge new data
+// Real-time sync — poll every 8s
 let _pollTimer = null;
+let _lastHash  = '';
+
 function startPolling(code){
   stopPolling();
   _doPoll(code);
@@ -919,32 +1031,46 @@ function startPolling(code){
 function stopPolling(){
   if(_pollTimer){ clearTimeout(_pollTimer); _pollTimer=null; }
 }
-async function _doPoll(code){
-  const fresh = await fbRead(code);
+
+async function manualRefresh(){
+  const btn=document.getElementById('refresh-btn');
+  if(btn){ btn.textContent='⟳'; btn.disabled=true; }
+  setLiveStatus('syncing');
+  const g=grp(); if(g&&me) await _doPoll(me.groupCode, true);
+  if(btn){ btn.textContent='⟳'; btn.disabled=false; }
+}
+
+async function _doPoll(code, force=false){
+  setLiveStatus('syncing');
+  const fresh = await fbReadByCode(code);
+
   if(fresh && fresh.name){
     fixArr(fresh);
-    const g = grp();
-    if(g){
-      // Merge new bills from Firebase not in local
-      const localIds = new Set(g.bills.map(b=>b.id));
-      fresh.bills.forEach(b=>{ if(!localIds.has(b.id)) g.bills.unshift(b); });
-      // Merge new grocery
-      const localGIds = new Set(g.grocery.map(i=>i.id));
-      fresh.grocery.forEach(i=>{ if(!localGIds.has(i.id)) g.grocery.push(i); });
-      // Merge new members
-      const localMIds = new Set(g.members.map(m=>m.id));
-      fresh.members.forEach(m=>{ if(!localMIds.has(m.id)) g.members.push(m); });
-      // Sync currency/adminId from Firebase (admin controls these)
-      if(fresh.currency) g.currency = fresh.currency;
-      if(fresh.adminId)  g.adminId  = fresh.adminId;
-      save();
-      renderAll();
+    const hash = JSON.stringify(fresh);
+
+    // Only update UI if data actually changed (or forced)
+    if(force || hash !== _lastHash){
+      _lastHash = hash;
+      const g = grp();
+      if(g){
+        // Full replace arrays from Firebase (source of truth)
+        g.bills   = fresh.bills;
+        g.grocery = fresh.grocery;
+        g.members = fresh.members;
+        g.currency= fresh.currency || g.currency;
+        g.adminId = fresh.adminId  || g.adminId;
+        g.name    = fresh.name;
+        // Save locally and re-render
+        try{ localStorage.setItem(SK, JSON.stringify(S)); }catch(e){}
+        renderAll();
+        updateCurUI();
+      }
     }
     setLiveStatus('online');
   } else {
     setLiveStatus('offline');
   }
-  _pollTimer = setTimeout(()=> _doPoll(code), 15000);
+  _pollTimer = setTimeout(()=> _doPoll(code), 8000);
 }
 
 // ═══════════════════ HELPERS
@@ -990,7 +1116,7 @@ function getUser(){
 }
 // ─── core lookup: find which group this email/phone belongs to ───────
 async function findGroupByContact(email, phone){
-  // 1. Check local cache first (instant)
+  // Check local cache first (instant)
   if(S && S.groups){
     for(const [code,g] of Object.entries(S.groups)){
       if(!g.members) continue;
@@ -1001,18 +1127,27 @@ async function findGroupByContact(email, phone){
       if(hit) return {code, group:g, member:hit};
     }
   }
-  // 2. Check Firebase invites index
-  const keys = [];
-  if(email) keys.push(email.toLowerCase().replace(/[.@]/g,c=>c==='.'?'_':'_at_'));
-  if(phone)  keys.push(phone.replace(/[\s+]/g,c=>c===' '?'_':'plus'));
-  for(const key of keys){
+  // Check JSONBin lookup bin for known groups
+  const lookupId = getLookupBinId();
+  if(lookupId){
     try{
-      const r = await fetch(FB+'/invites/'+key+'.json');
+      const r = await fetch(JB_BASE+'/b/'+lookupId+'/latest',{headers:{'X-Master-Key':JB_API_KEY,'X-Bin-Meta':'false'}});
       if(r.ok){
-        const inv = await r.json();
-        if(inv && inv.groupCode){
-          const g = await fbRead(inv.groupCode);
-          if(g && g.name){ fixArr(g); return {code:inv.groupCode, group:g, member:null}; }
+        const map = await r.json();
+        for(const [code, binId] of Object.entries(map)){
+          setBinId(code, binId);
+          const g = await fbRead(code);
+          if(g && g.members){
+            fixArr(g);
+            const hit = g.members.find(m=>
+              (email && m.email && m.email.toLowerCase()===email.toLowerCase())||
+              (phone  && m.phone && m.phone===phone)
+            );
+            if(hit){
+              if(!S) S={groups:{}}; S.groups[code]=g; save();
+              return {code, group:g, member:hit};
+            }
+          }
         }
       }
     }catch(e){}
@@ -1073,146 +1208,84 @@ function dismissSetup(){
   document.getElementById('setup-overlay').classList.add('hide');
 }
 
-function _initGSI(){
-  if(!_googleClientId||!window.google||_gsiLoaded) return;
-  _gsiLoaded=true;
+// ── Google credential received (ID token JWT) ─────────────────────
+function _onGoogleCredential(response){
+  try{
+    // Decode the JWT id_token — no library needed, just base64
+    const payload = JSON.parse(atob(
+      response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')
+    ));
+    const email = payload.email||'';
+    const name  = payload.name||payload.given_name||email.split('@')[0]||'User';
+    const wrap  = document.getElementById('google-btn-wrap');
+    if(wrap) wrap.innerHTML='<div style="text-align:center;font-size:13px;color:var(--text2);font-weight:600;padding:8px">Signing in as '+name+'…</div>';
+    _doJoinWithContact(name, email, '').then(ok=>{
+      if(!ok){
+        // Restore button and prefill email
+        _renderGoogleButton();
+        document.getElementById('a-name').value  = name;
+        document.getElementById('a-email').value = email;
+        switchContactTab('email');
+        toast('Hi '+name+'! Ask your admin to add your email ('+email+') first, then tap Sign In.',true);
+      }
+    });
+  }catch(e){
+    console.error('Google credential error:',e);
+    _renderGoogleButton();
+    toast('Google sign-in failed — try email below',true);
+  }
+}
+
+// ── Render Google's official button into the wrapper ──────────────
+function _renderGoogleButton(){
+  const wrap = document.getElementById('google-btn-wrap');
+  if(!wrap) return;
+  if(!window.google||!window.google.accounts){
+    wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--muted);padding:4px 0">Google Sign-In unavailable — use email or mobile below</div>';
+    return;
+  }
+  wrap.innerHTML=''; // clear
   google.accounts.id.initialize({
     client_id: _googleClientId,
     callback: _onGoogleCredential,
     auto_select: false,
     cancel_on_tap_outside: true,
+    ux_mode: 'popup',
+  });
+  google.accounts.id.renderButton(wrap, {
+    theme: 'outline',
+    size: 'large',
+    width: wrap.offsetWidth||320,
+    logo_alignment: 'center',
+    text: 'continue_with',
   });
 }
 
-function _onGoogleCredential(response){
-  // Decode JWT payload (no crypto needed — we just read the claims)
-  try{
-    const parts = response.credential.split('.');
-    const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
-    const email = payload.email||'';
-    const name  = payload.name||payload.given_name||email.split('@')[0]||'User';
-    const btn   = document.getElementById('google-btn');
-    if(btn){ btn.disabled=true; btn.textContent='Signing in…'; }
-    _doJoinWithContact(name, email, '').then(ok=>{
-      if(btn){ btn.disabled=false; _resetGoogleBtn(); }
-      if(!ok){
-        document.getElementById('a-name').value  = name;
-        document.getElementById('a-email').value = email;
-        switchContactTab('email');
-        toast('Hi '+name+'! Ask your admin to add your email ('+email+') to the group first, then try again.',true);
-      }
-    });
-  }catch(e){
-    console.error('Google credential decode error:',e);
-    toast('Google sign-in failed. Try the email option instead.',true);
-  }
-}
-
-function _resetGoogleBtn(){
-  const btn=document.getElementById('google-btn'); if(!btn) return;
-  btn.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continue with Google';
-}
-
-async function signInWithGoogle(){
+// button onclick stub (Google renders its own button, this is fallback)
+function signInWithGoogle(){
   if(!_googleClientId){
     document.getElementById('setup-overlay').classList.remove('hide');
     return;
   }
-  const btn = document.getElementById('google-btn');
-  btn.disabled=true;
-  btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#4285F4" stroke-width="3" stroke-dasharray="31"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur=".8s" repeatCount="indefinite"/></circle></svg>&nbsp;Opening…';
-
-  // Wait up to 4s for GSI
-  let waited=0;
-  while((!window.google||!window.google.accounts)&&waited<4000){
-    await new Promise(r=>setTimeout(r,200)); waited+=200;
-  }
-
-  btn.disabled=false; _resetGoogleBtn();
-
-  if(!window.google||!window.google.accounts||!window.google.accounts.oauth2){
-    // GSI blocked — smoothly scroll down to email sign-in
-    _highlightEmailSignIn();
-    return;
-  }
-
-  _initGSI();
-
-  try{
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: _googleClientId,
-      scope: 'email profile openid',
-      callback: (resp)=>{
-        if(resp.error||!resp.access_token){ return; }
-        const gb=document.getElementById('google-btn');
-        if(gb){gb.disabled=true;gb.textContent='Signing in…';}
-        fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
-          headers:{Authorization:'Bearer '+resp.access_token}
-        })
-        .then(r=>r.json())
-        .then(info=>{
-          const email=info.email||'';
-          const name=info.name||info.given_name||email.split('@')[0]||'User';
-          return _doJoinWithContact(name,email,'').then(ok=>{
-            if(gb){gb.disabled=false;_resetGoogleBtn();}
-            if(!ok){
-              document.getElementById('a-name').value=name;
-              document.getElementById('a-email').value=email;
-              switchContactTab('email');
-              toast('Hi '+name+'! Ask your admin to add '+email+' first, then tap Sign In.',true);
-            }
-          });
-        })
-        .catch(e=>{ if(gb){gb.disabled=false;_resetGoogleBtn();} });
-      }
-    });
-    client.requestAccessToken({prompt:'select_account'});
-  }catch(e){
-    console.error('GSI error:',e);
-    _highlightEmailSignIn();
+  if(window.google&&window.google.accounts){
+    _renderGoogleButton();
   }
 }
 
-function _highlightEmailSignIn(){
-  // Smoothly highlight the email/mobile sign-in area
-  const emailGrp = document.getElementById('grp-email');
-  const nameInp  = document.getElementById('a-name');
-  // Flash the email section
-  const section  = document.querySelector('#card-login .divider-row');
-  if(section){
-    section.style.color='var(--accent)';
-    section.textContent='👇 use email or mobile to sign in';
-    setTimeout(()=>{ section.style.color=''; section.textContent='or sign in with email / mobile'; },4000);
-  }
-  if(nameInp) nameInp.focus();
-}
-
-// Script already in <head> — just init when ready
+// ── Load GSI then render the real Google button ───────────────────
 function _loadGSI(){
   if(!_googleClientId) return;
-  if(window.google&&window.google.accounts){ _initGSI(); return; }
+  const doRender=()=>{ if(document.getElementById('google-btn-wrap')) _renderGoogleButton(); };
+  if(window.google&&window.google.accounts){ doRender(); return; }
   let tries=0;
   const poll=setInterval(()=>{
     tries++;
-    if(window.google&&window.google.accounts){
-      clearInterval(poll);
-      _initGSI();
-    }
-    if(tries>30){ // 6 seconds
-      clearInterval(poll);
-      // Hide Google button and show subtle note if blocked
-      const btn=document.getElementById('google-btn');
-      const wrap=document.getElementById('google-btn-wrap');
-      if(btn&&!window.google){
-        btn.style.display='none';
-        if(wrap) wrap.innerHTML='<div style="text-align:center;font-size:11px;color:var(--muted);padding:4px 0">Google Sign-In unavailable on this device — use email or mobile below</div>';
-      }
-    }
+    if(window.google&&window.google.accounts){ clearInterval(poll); doRender(); }
+    if(tries>30){ clearInterval(poll); doRender(); } // show fallback after 6s
   },200);
 }
 
-// No-op: kept for compatibility (redirect callback no longer used)
-async function handleGoogleCallback(){ }
+async function handleGoogleCallback(){}
 
 function goCreate(){ const u=getUser(); if(!u)return; window._pu=u; showCard('card-create'); }
 function goJoin(){ const u=getUser(); if(!u)return; window._pu=u; showCard('card-join'); }
@@ -1302,7 +1375,7 @@ async function joinGroup(){
   if(!code||code.length<4){ toast('Enter a valid group code',true); return; }
   btn.disabled=true; btn.textContent='Joining…';
   // Fetch group from Firebase
-  const g = await fbRead(code);
+  const g = await fbReadByCode(code);
   btn.disabled=false; btn.textContent='🚀 Join';
   if(!g||!g.name){
     toast('Group "'+code+'" not found. Check the code and try again.',true);
@@ -1385,7 +1458,7 @@ function openCurModal(){
 }
 function selectCur(code){
   const g=grp(); if(!g)return;
-  g.currency=code; save(); closeModal('cur-modal'); updateCurUI(); renderAll();
+  g.currency=code; saveAndSync(); closeModal('cur-modal'); updateCurUI(); renderAll();
   toast('Currency changed to '+code);
 }
 
@@ -1439,7 +1512,7 @@ function addMember(){
   document.getElementById('m-name').value='';
   document.getElementById('m-email').value='';
   document.getElementById('m-phone').value='';
-  save();
+  saveAndSync();
   // Write invite lookup to Firebase so new member can auto-join
   const lastMember = grp().members[grp().members.length-1];
   _writeInvite(lastMember, me.groupCode);
@@ -1463,11 +1536,11 @@ function removeMember(id){
   if(id===me.id){ toast('Cannot remove yourself',true); return; }
   g.members=g.members.filter(m=>m.id!==id);
   g.bills=g.bills.filter(b=>b.paidBy!==id);
-  save(); renderAll();
+  saveAndSync(); renderAll();
 }
 function makeAdmin(id){
   if(!isAdmin())return;
-  grp().adminId=id; save();
+  grp().adminId=id; saveAndSync();
   document.getElementById('crown').classList.toggle('hide', id!==me.id);
   toast('Admin role transferred'); renderAll();
 }
@@ -1532,7 +1605,7 @@ function saveMemberEdit(){
   m.name=name; m.email=email; m.phone=phone;
   // If editing own profile, update me too
   if(_editMemberId===me.id){ me.name=name; me.email=email; me.phone=phone; S.me=me; }
-  save();
+  saveAndSync();
   // Update invite lookup if email/phone changed
   _writeInvite(m, me.groupCode);
   renderAll(); closeModal('mem-edit-modal'); toast('Member updated ✓');
@@ -1560,7 +1633,7 @@ function deleteMember(){
   // Keep bills but mark payer as unknown if deleted
   // If self-delete, logout
   closeModal('mem-edit-modal');
-  save();
+  saveAndSync();
   if(isSelf){
     me=null; S.me=null; save();
     setScreen('auth-screen'); backToLogin();
@@ -1616,12 +1689,12 @@ function addBill(){
   g.bills.unshift({id:uid(),description:desc,amount:amt,paidBy,date,splitAmong:among,addedBy:me.id,addedAt:new Date().toISOString()});
   document.getElementById('b-desc').value='';
   document.getElementById('b-amt').value='';
-  setSplit('all'); save(); renderAll(); toast('Bill added ✓');
+  setSplit('all'); saveAndSync(); renderAll(); toast('Bill added ✓');
 }
 function deleteBill(id){
   if(!isAdmin()){ toast('Only admin can delete bills',true); return; }
   grp().bills=grp().bills.filter(b=>b.id!==id);
-  save(); renderAll(); toast('Bill deleted');
+  saveAndSync(); renderAll(); toast('Bill deleted');
 }
 function openEditBill(id){
   if(!isAdmin()){ toast('Only admin can edit bills',true); return; }
@@ -1648,7 +1721,7 @@ function saveEdit(){
   if(!desc||isNaN(amt)||amt<=0){ toast('Fill all fields',true); return; }
   if(!chips.length){ toast('Select at least one member',true); return; }
   Object.assign(b,{description:desc,amount:amt,date,paidBy,splitAmong:chips});
-  save(); renderAll(); closeModal('edit-modal'); toast('Bill updated ✓');
+  saveAndSync(); renderAll(); closeModal('edit-modal'); toast('Bill updated ✓');
 }
 // Chart colours (matches screenshot: green tones)
 const CHART_COLORS = [
@@ -1803,14 +1876,14 @@ function renderPresetItems(){
       <span class="pname">${p.n}</span>
     </button>`;}).join('');
 }
-function toggleGrocery(id){ const g=grp(); const i=g.grocery.find(x=>x.id===id); if(i)i.checked=!i.checked; save(); renderGrocery(); renderPresetItems(); }
+function toggleGrocery(id){ const g=grp(); const i=g.grocery.find(x=>x.id===id); if(i)i.checked=!i.checked; saveAndSync(); renderGrocery(); renderPresetItems(); }
 function deleteGrocery(id){
   if(!isAdmin()){ toast('Only admin can delete items',true); return; }
-  grp().grocery=grp().grocery.filter(x=>x.id!==id); save(); renderGrocery();
+  grp().grocery=grp().grocery.filter(x=>x.id!==id); saveAndSync(); renderGrocery();
 }
 function clearPurchased(){
   if(!isAdmin()){ toast('Only admin can clear',true); return; }
-  grp().grocery=grp().grocery.filter(x=>!x.checked); save(); renderGrocery();
+  grp().grocery=grp().grocery.filter(x=>!x.checked); saveAndSync(); renderGrocery();
 }
 function renderGrocery(){
   const g=grp(); if(!g)return;
