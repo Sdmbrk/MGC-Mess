@@ -875,6 +875,7 @@ async function fbRead(code){
   if(!binId) return null;
   try{
     const r = await fetch(JB_BASE+'/b/'+binId+'/latest', {
+      mode:'cors',
       headers:{'X-Master-Key': JB_API_KEY, 'X-Bin-Meta': 'false'}
     });
     if(!r.ok){ console.warn('JSONBin read HTTP', r.status); return null; }
@@ -891,6 +892,7 @@ async function fbWrite(code, data){
   try{
     const r = await fetch(JB_BASE+'/b/'+binId, {
       method:'PUT',
+      mode:'cors',
       headers:{'Content-Type':'application/json','X-Master-Key': JB_API_KEY},
       body: JSON.stringify(data)
     });
@@ -907,6 +909,7 @@ async function _createBin(code, data){
   try{
     const r = await fetch(JB_BASE+'/b', {
       method:'POST',
+      mode:'cors',
       headers:{
         'Content-Type':'application/json',
         'X-Master-Key': JB_API_KEY,
@@ -915,18 +918,29 @@ async function _createBin(code, data){
       },
       body: JSON.stringify(data)
     });
-    if(!r.ok){ setLiveStatus('offline'); return false; }
+    if(!r.ok){
+      const errText = await r.text().catch(()=>'');
+      console.warn('JSONBin create HTTP', r.status, errText);
+      setLiveStatus('offline');
+      toast('Sync error '+r.status+': '+errText.slice(0,80), true);
+      return false;
+    }
     const res = await r.json();
-    const binId = res.metadata?.id||res.id;
+    const binId = res.metadata?.id || res.record?.$id || res.id;
     if(binId){
       setBinId(code, binId);
-      // Also write binId to a lookup bin so others can find it by code
       await _writeLookup(code, binId);
       setLiveStatus('online');
       return true;
     }
+    console.warn('JSONBin: no binId in response', res);
     return false;
-  }catch(e){ console.warn('JSONBin create error:', e.message); setLiveStatus('offline'); return false; }
+  }catch(e){
+    console.warn('JSONBin create error:', e.message);
+    setLiveStatus('offline');
+    toast('Cannot reach sync server. Check internet. Error: '+e.message, true);
+    return false;
+  }
 }
 
 // Lookup bin maps groupCode → binId so joiners can find the bin
@@ -1340,13 +1354,12 @@ async function createGroup(){
   const g={code,name:gname,adminId:u.id,currency:'AED',
     members:[{...u,joinedAt:new Date().toISOString()}],bills:[],grocery:[]};
   // Save to Firebase
+  // Try to sync to cloud — but allow local creation even if it fails
   const ok = await fbWrite(code, g);
   btn.disabled=false; btn.textContent='✨ Create & Enter';
   if(!ok){
-    toast('Could not reach server — check your internet connection',true);
-    return;
+    toast('⚠️ Created locally — cloud sync failed. Bills saved on device only.',true);
   }
-  // ── KEY FIX: Write admin's own invite so they can recover via Sign In ──
   await _writeInvite(u, code);
   if(!S) S={groups:{}};
   S.groups[code]=g;
